@@ -1,97 +1,100 @@
-from sqlalchemy import update
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy import update, insert
 from data_base import mysql_models_two
-from data_base.db_conectors import MysqlDatabaseTwo 
+from sqlalchemy.orm import joinedload
 from inspect_terminals.my_logger import logger
 
-
 class SimDataBase:
-    """Класс для работы с СИМ."""
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    def __init__(self):
-        self.db = MysqlDatabaseTwo()
-
-    def _execute_query(self, query_func):
-        """Общий метод для выполнения запросов."""
-        session = self.db.session
+    async def update_sim_imei(self, sim_iccid, term_imei):
+        """Асинхронное обновление IMEI SIM-карты"""
         try:
-            result = query_func(session)
-            session.commit()
-            return result
-        except Exception as e:
-            logger.error(f"Ошибка при выполнении запроса: {e}")
-            session.rollback()
-            return None
-        finally:
-            session.close()
-
-    def update_sim_imei(self, sim_iccid, term_imei):
-        """
-        Обновляет СИМ imei
-        """
-        def query(session: Session):
-            return session.execute(
+            query = (
                 update(mysql_models_two.SimCard)
                 .where(
                     mysql_models_two.SimCard.sim_iccid == sim_iccid,
-                    mysql_models_two.SimCard.terminal_imei != term_imei
+                    mysql_models_two.SimCard.terminal_imei != term_imei,
                 )
                 .values(terminal_imei=term_imei)
             )
-        self._execute_query(query)
-
-    def update_sim_contragent(self, sim_iccid, contragent_id):
-        """
-        Обновляет СИМ Контрагентов
-        """
-        def query(session: Session):
-            return session.execute(
-                update(mysql_models_two.SimCard)
-                .where(
-                    mysql_models_two.SimCard.sim_iccid == sim_iccid,
-                    mysql_models_two.SimCard.contragent_id != contragent_id
-                )
-                .values(contragent_id=contragent_id)
-            )
-        self._execute_query(query)
-
-
+            await self.session.execute(query)
+            await self.session.commit()
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении SIM-карты: {e}")
+            await self.session.rollback()
 
 class TerminalDataBase:
-    """Класс для работы с Терминалами."""
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    def __init__(self):
-        self.db = MysqlDatabaseTwo()
-
-    def _execute_query(self, query_func):
-        """Общий метод для выполнения запросов."""
-        session = self.db.session
+    async def update_term_contragent(self, term_imei, contragent_id):
+        """Асинхронное обновление контрагентов терминалов"""
         try:
-            result = query_func(session)
-            session.commit()
-            return result
-        except Exception as e:
-            logger.error(f"Ошибка при выполнении запроса: {e}")
-            session.rollback()
-            return None
-        finally:
-            session.close()
-
-
-    def update_term_contragent(self, term_imei, contragent_id):
-        """
-        Обновляет СИМ Контрагентов
-        """
-        def query(session: Session):
-            return session.execute(
+            query = (
                 update(mysql_models_two.Device)
                 .where(
                     mysql_models_two.Device.device_imei == term_imei,
-                    mysql_models_two.Device.contragent_id != contragent_id
+                    mysql_models_two.Device.contragent_id != contragent_id,
                 )
                 .values(contragent_id=contragent_id)
             )
-        self._execute_query(query)
+            await self.session.execute(query)
+            await self.session.commit()
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении терминала: {e}")
+            await self.session.rollback()
 
-    def add_terminal(self, term_imei, contragent_id, term_type):
-        pass
+
+    async def get_terminal_in_db(self, term_imei: str):
+        """Асинхронный метод для получения терминала и его модели из БД по IMEI."""
+        try:
+            # Выполняем join между Device и DevicesBrand
+            query = (
+                select(
+                    mysql_models_two.Device.device_serial,
+                    mysql_models_two.Device.device_imei,
+                    mysql_models_two.DevicesBrand.name.label("model_name"),
+                )
+                .join(
+                    mysql_models_two.DevicesBrand,
+                    mysql_models_two.Device.devices_brand_id == mysql_models_two.DevicesBrand.id,
+                )
+                .where(mysql_models_two.Device.device_imei == term_imei)
+            )
+            result = await self.session.execute(query)
+            terminal = result.fetchone()
+
+            # Если терминал найден, возвращаем данные
+            if terminal:
+                return {
+                    "device_serial": terminal.device_serial,
+                    "device_imei": terminal.device_imei,
+                    "model_name": terminal.model_name,
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Ошибка при получении терминала из базы: {e}")
+            return None
+
+
+    async def add_terminal_to_db(self, vehicle_data: dict):
+        """Асинхронное добавление нового терминала в базу данных."""
+        try:
+            query = insert(mysql_models_two.Device).values(
+                device_serial=vehicle_data["serialNumber"], #нет пока
+                device_imei=vehicle_data["imei"],
+                devices_brand_id=vehicle_data.get("deviceBrandId"), #нет пока
+                terminal_date=vehicle_data.get("terminalDate"), # нет пока
+                client_name=vehicle_data.get("clientName", "Неизвестный клиент"), # нет пока
+                # дополнить
+            )
+            await self.session.execute(query)
+            await self.session.commit()
+            logger.info(f"Терминал с IMEI {vehicle_data['imei']} добавлен в базу данных.")
+        except Exception as e:
+            logger.error(f"Ошибка при добавлении терминала: {e}")
+            await self.session.rollback()
+

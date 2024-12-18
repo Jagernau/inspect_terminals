@@ -1,92 +1,69 @@
+import asyncio
 import json
-import requests
-import time
-
-import sys
-sys.path.append('../')
-from information_services_backend import config
-from information_services_backend.my_logger import logger
-import random
+import aiohttp
+from random import uniform
+from collections import Counter
+from inspect_terminals.my_logger import logger
 
 class Glonasssoft:
-    """ 
-    Получение данных с систем мониторинга Глонассофт
-    """
     def __init__(self, login: str, password: str, based_adres: str):
         self.login = login
         self.password = password
         self.based_adres = based_adres
 
-    def gen_random_num(self):
-        return random.uniform(1.1, 1.7)
+    async def gen_random_delay(self):
+        await asyncio.sleep(uniform(1.1, 1.7))
 
-    def token(self):
+    async def token(self):
         """Получение Токена Глонассофт"""
-        time.sleep(self.gen_random_num())
-        url = f'{self.based_adres}v3/auth/login'
-        data = {'login': self.login, 'password': self.password}
-        headers = {'Content-type': 'application/json', 'accept': 'json'}
-        response = requests.post(url, data=json.dumps(data), headers=headers)
-        if response.status_code == 200:
-            return response.json()["AuthId"]
-        else:
-            time.sleep(self.gen_random_num())
-            response = requests.post(url, data=json.dumps(data), headers=headers)
-            if response.status_code == 200:
-                return response.json()["AuthId"]
-            else:
-                logger.info(f"Не получен ТОКЕН")
-                return None
+        await self.gen_random_delay()
+        url = f"{self.based_adres}v3/auth/login"
+        data = {"login": self.login, "password": self.password}
+        headers = {"Content-type": "application/json", "accept": "json"}
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=data, headers=headers) as response:
+                if response.status == 200:
+                    return (await response.json()).get("AuthId")
+                else:
+                    logger.warning("Не получен ТОКЕН")
+                    return None
 
-
-    def _get_request(self, url, token):
-        """Универсальный метод для выполнения GET-запросов"""
+    async def _get_request(self, url, token):
+        """Асинхронный универсальный метод для GET-запросов"""
         headers = {
             "X-Auth": f"{token}",
-            'Content-type': 'application/json',
-            'Accept': 'application/json'
+            "Content-type": "application/json",
+            "Accept": "application/json",
         }
-        time.sleep(self.gen_random_num())
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            time.sleep(self.gen_random_num())
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                logger.info(f"Не получен GET")
-                return None
+        await self.gen_random_delay()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.warning(f"Ошибка GET-запроса на {url}")
+                    return None
 
-    def _post_request(self, url, token, data: dict):
-        """Универсальный метод для выполнения POST """
+    async def _post_request(self, url, token, data: dict):
+        """Асинхронный универсальный метод для POST-запросов"""
         headers = {
             "X-Auth": f"{token}",
-            'Content-type': 'application/json',
-            'Accept': 'application/json'
+            "Content-type": "application/json",
+            "Accept": "application/json",
         }
-        time.sleep(self.gen_random_num())
-        response = requests.post(url, headers=headers, data=json.dumps(data))
-        if response.status_code == 200:
-            return response.json()
-        else:
-            time.sleep(self.gen_random_num())
-            response = requests.post(url, headers=headers, data=json.dumps(data))
-            if response.status_code == 200:
-                return response.json()
-            else:
-                logger.info(f"Не получен POST")
-                return None
+        await self.gen_random_delay()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=data, headers=headers) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.warning(f"Ошибка POST-запроса на {url}")
+                    return None
 
-    def get_all_vehicles_new(self, token: str, parentId: str):
-        """
-        Метод получения всех объектов glonasssoft
-        """
-        data = {
-                "parentId": str(parentId)
-            }
-        time.sleep(1)
-        return self._post_request(f"{self.based_adres}v3/vehicles/find", token, data)
-    
+    async def get_all_vehicles_new(self, token: str, parentId: str):
+        """Асинхронный метод получения всех объектов"""
+        data = {"parentId": str(parentId)}
+        await asyncio.sleep(1)
+        return await self._post_request(f"{self.based_adres}v3/vehicles/find", token, data)
 
