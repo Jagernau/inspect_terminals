@@ -1,12 +1,9 @@
-import time
-from datetime import datetime
-from my_logger import logger
 from monitoring_systems import glonasssoft as gl
 import config
-import json
 from collections import Counter
 import asyncio
 from data_base.crud import TerminalDataBase
+from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,8 +39,34 @@ async def get_glonass_commands():
                                     pass
                                 else:
                                     pass
-                                # послосле определения модели и фирмы
+                                # после определения модели и фирмы
                                 # либо по фирме
                                 # отправлять команду на терминал
                                 # определив из словаря команду
+                                command = str()
+                                put_command = await glonass_class.put_terminal_comands(
+                                        token=gl_token,
+                                        sourceid=config.GLONASS_USR_ID,
+                                        destinationid=terminal_imei,
+                                        taskdata=command,
+                                        owner=config.GLONASS_PARENT_ID
+                                        )
+                                if put_command:
+                                   await asyncio.sleep(8)
+                                   past_time = datetime.utcnow() - timedelta(minutes=30)
+                                   past_time = past_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+                                   future_time = datetime.utcnow() + timedelta(minutes=30)
+                                   future_time = future_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+                                   terminal_answer = glonass_class.get_terminal_answer(
+                                            token=gl_token,
+                                            imei=terminal_imei,
+                                            start=past_time, 
+                                            end=future_time
+                                           )
+                                   if terminal_answer:
+                                       # сохранить в базе данных
+                                       pass
+                                
+
+
 

@@ -67,3 +67,79 @@ class Glonasssoft:
         await asyncio.sleep(1)
         return await self._post_request(f"{self.based_adres}v3/vehicles/find", token, data)
 
+
+    async def put_terminal_comands(self, token: str, sourceid: str, destinationid: str, taskdata: str, owner: str):
+        """
+        Асинхронная отправка команды в терминал.
+
+        Аргументы:
+            token: Токен авторизации.
+            sourceid: Идентификатор источника.
+            destinationid: Идентификатор получателя.
+            taskdata: Команда для терминала.
+            owner: Владелец команды.
+        Возвращает:
+            Ответ сервера в формате JSON или сообщение об ошибке.
+        """
+        url = f"{self.based_adres}api/commands/put"
+        headers = {
+            "X-Auth": token,
+            "Content-Type": "application/json",
+        }
+        data = [{
+            "sourceid": sourceid,
+            "destinationid": destinationid,
+            "tasktype": 0,
+            "taskdata": taskdata,
+            "trycount": 0,
+            "TryMax": "3",
+            "answer": "",
+            "owner": owner,
+        }]
+
+        await self.gen_random_delay()
+        async with aiohttp.ClientSession() as session:
+            async with session.put(url, headers=headers, json=data) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.warning(f"Ошибка отправки команды на {url}: {response.status} {await response.text()}")
+                    return None
+
+
+    async def get_terminal_answer(self, token: str, imei: str, start: str, end: str):
+        """
+        Асинхронное получение ответов от терминала.
+
+        Аргументы:
+            token: Токен авторизации.
+            imei: IMEI терминала.
+            start: Дата начала (в формате YYYY-MM-DD).
+            end: Дата окончания (в формате YYYY-MM-DD).
+        Возвращает:
+            Ответ сервера в формате JSON или сообщение об ошибке.
+        """
+        url = f"{self.based_adres}api/commands"
+        data = str({
+            "imei": imei,
+            "start": start,
+            "end": end,
+        })
+        params = {
+            "q": data,
+            "sort": '[{"property":"createtime","direction":"DESC"}]',
+        }
+        headers = {
+            "X-Auth": token,
+        }
+
+        await self.gen_random_delay()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.warning(f"Ошибка получения команд с {url}: {response.status} {await response.text()}")
+                    return None
+
+
