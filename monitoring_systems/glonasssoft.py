@@ -3,13 +3,25 @@ import json
 import aiohttp
 from random import uniform
 from collections import Counter
+from datetime import datetime, timedelta
+import sys
+sys.path.append('../')
 from inspect_terminals.my_logger import logger
 
 class Glonasssoft:
-    def __init__(self, login: str, password: str, based_adres: str):
+    def __init__(
+            self, 
+            login: str, 
+            password: str, 
+            based_adres: str,
+            glonass_user_id: str,
+            glonass_parent_id: str
+            ):
         self.login = login
         self.password = password
         self.based_adres = based_adres
+        self.glonass_user_id = glonass_user_id
+        self.glonass_parent_id = glonass_parent_id
 
     async def gen_random_delay(self):
         await asyncio.sleep(uniform(1.1, 1.7))
@@ -61,14 +73,14 @@ class Glonasssoft:
                     logger.warning(f"Ошибка POST-запроса на {url}")
                     return None
 
-    async def get_all_vehicles_new(self, token: str, parentId: str):
+    async def get_all_vehicles_new(self, token):
         """Асинхронный метод получения всех объектов"""
-        data = {"parentId": str(parentId)}
+        data = {"parentId": str(self.glonass_parent_id)}
         await asyncio.sleep(1)
         return await self._post_request(f"{self.based_adres}v3/vehicles/find", token, data)
 
 
-    async def put_terminal_comands(self, token: str, sourceid: str, destinationid: str, taskdata: str, owner: str):
+    async def put_terminal_comands(self, token: str, destinationid: str, taskdata: str):
         """
         Асинхронная отправка команды в терминал.
 
@@ -81,20 +93,20 @@ class Glonasssoft:
         Возвращает:
             Ответ сервера в формате JSON или сообщение об ошибке.
         """
-        url = f"{self.based_adres}api/commands/put"
+        url = f"{self.based_adres}commands/put"
         headers = {
             "X-Auth": token,
             "Content-Type": "application/json",
         }
         data = [{
-            "sourceid": sourceid,
+            "sourceid": self.glonass_user_id,
             "destinationid": destinationid,
             "tasktype": 0,
             "taskdata": taskdata,
             "trycount": 0,
             "TryMax": "3",
             "answer": "",
-            "owner": owner,
+            "owner": self.glonass_parent_id,
         }]
 
         await self.gen_random_delay()
@@ -107,7 +119,7 @@ class Glonasssoft:
                     return None
 
 
-    async def get_terminal_answer(self, token: str, imei: str, start: str, end: str):
+    async def get_terminal_answer(self, token: str, imei: str):
         """
         Асинхронное получение ответов от терминала.
 
@@ -119,11 +131,18 @@ class Glonasssoft:
         Возвращает:
             Ответ сервера в формате JSON или сообщение об ошибке.
         """
-        url = f"{self.based_adres}api/commands"
+        url = f"{self.based_adres}commands"
+
+        past_time = datetime.now() - timedelta(minutes=30)
+        past_time = past_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+        future_time = datetime.now() + timedelta(minutes=30)
+        future_time = future_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
         data = str({
             "imei": imei,
-            "start": start,
-            "end": end,
+            "start": past_time,
+            "end": future_time,
         })
         params = {
             "q": data,
@@ -141,5 +160,18 @@ class Glonasssoft:
                 else:
                     logger.warning(f"Ошибка получения команд с {url}: {response.status} {await response.text()}")
                     return None
+
+    async def action_glonass(self, gl_token, command, imei):           
+        await self.put_terminal_comands(
+                                    token=gl_token,
+                                    destinationid=imei,
+                                    taskdata="*?ICCID",
+                                    )
+        await asyncio.sleep(8)
+        terminal_answer = await self.get_terminal_answer(
+                                        token=gl_token,
+                                        imei=imei,
+                                       )
+        return terminal_answer
 
 

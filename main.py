@@ -13,11 +13,13 @@ async def get_glonass_commands():
             login=config.GLONASS_LOGIN,
             password=config.GLONASS_PASS,
             based_adres=config.GLONASS_BASED_ADRESS,
+            glonass_user_id=config.GLONASS_USR_ID,
+            glonass_parent_id=config.GLONASS_PARENT_ID
         )
         gl_token = await glonass_class.token()
         if gl_token:
             all_vehicles = await glonass_class.get_all_vehicles_new(
-                gl_token, config.GLONASS_PARENT_ID
+                gl_token
             )
             if all_vehicles:
                 device_types = [item["deviceTypeName"] for item in all_vehicles]
@@ -26,47 +28,27 @@ async def get_glonass_commands():
                     sorted(device_type_counts.items(), key=lambda x: x[1], reverse=True)
                 )
 
-                async with AsyncSession(config.DB_ENGINE) as session:
-                    terminal_db = TerminalDataBase(session)
-
-                    for key in sorted_device_type_counts.keys():
-                        for vehicle in all_vehicles:
-                            if key == vehicle["deviceTypeName"]:
-                                terminal_imei = vehicle["imei"]
-                                terminal_in_db = await terminal_db.get_terminal_in_db(terminal_imei)
-                                if not terminal_in_db:
-                                    #add_terminal_to_db(self, vehicle_data: dict)
-                                    pass
-                                else:
-                                    pass
-                                # после определения модели и фирмы
-                                # либо по фирме
-                                # отправлять команду на терминал
-                                # определив из словаря команду
-                                command = str()
-                                put_command = await glonass_class.put_terminal_comands(
-                                        token=gl_token,
-                                        sourceid=config.GLONASS_USR_ID,
-                                        destinationid=terminal_imei,
-                                        taskdata=command,
-                                        owner=config.GLONASS_PARENT_ID
-                                        )
-                                if put_command:
-                                   await asyncio.sleep(8)
-                                   past_time = datetime.utcnow() - timedelta(minutes=30)
-                                   past_time = past_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-                                   future_time = datetime.utcnow() + timedelta(minutes=30)
-                                   future_time = future_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-                                   terminal_answer = glonass_class.get_terminal_answer(
-                                            token=gl_token,
-                                            imei=terminal_imei,
-                                            start=past_time, 
-                                            end=future_time
-                                           )
-                                   if terminal_answer:
-                                       # сохранить в базе данных
-                                       pass
+                count = 0
+                for key in sorted_device_type_counts.keys():
+                    for vehicle in all_vehicles:
+                        if key == vehicle["deviceTypeName"]:
+                            terminal_imei = vehicle["imei"]
+                            # async with AsyncSession(config.DB_ENGINE) as session:
+                            #     terminal_db = TerminalDataBase(session)
+                            #     terminal_in_db = await terminal_db.get_terminal_in_db(terminal_imei)
+                            # if not terminal_in_db:
+                            #     #add_terminal_to_db(self, vehicle_data: dict)
+                            #     pass
+                            # else:
+                            #     pass
+                            command = "*?ICCID"
+                            glonass_class.action_glonass(
+                                    )
                                 
 
 
+
+if __name__ == "__main__":
+    # Запуск асинхронной программы
+    asyncio.run(get_glonass_commands())
 
