@@ -1,54 +1,62 @@
-from monitoring_systems import glonasssoft as gl
-import config
-from collections import Counter
+# file: main.py
+
 import asyncio
-from data_base.crud import TerminalDataBase
-from datetime import datetime, timedelta
+import threading
+from glonass_action import GlonassAction
+# from data_base.crud import save_answers_to_db, save_command_status_to_db
+from config import MONITORING_CONFIG
+from my_logger import logger as log
 
-from sqlalchemy.ext.asyncio import AsyncSession
+async def process_glonass_system(config):
+    """
+    Обрабатывает работу с системой мониторинга ГЛОНАСС.
+    """
+    glonass_action = GlonassAction(
+        glonass_login=config["login"],
+        glonass_pass=config["password"],
+        glonass_adres=config["address"],
+        glonass_usr_id=config["user_id"],
+        glonass_parent_id=config["parent_id"],
+    )
 
-async def get_glonass_commands():
-    if config.GLONASS_LOGIN and config.GLONASS_PASS and config.GLONASS_BASED_ADRESS and config.GLONASS_PARENT_ID:
-        glonass_class = gl.Glonasssoft(
-            login=config.GLONASS_LOGIN,
-            password=config.GLONASS_PASS,
-            based_adres=config.GLONASS_BASED_ADRESS,
-            glonass_user_id=config.GLONASS_USR_ID,
-            glonass_parent_id=config.GLONASS_PARENT_ID
-        )
-        gl_token = await glonass_class.token()
-        if gl_token:
-            all_vehicles = await glonass_class.get_all_vehicles_new(
-                gl_token
-            )
-            if all_vehicles:
-                device_types = [item["deviceTypeName"] for item in all_vehicles]
-                device_type_counts = Counter(device_types)
-                sorted_device_type_counts = dict(
-                    sorted(device_type_counts.items(), key=lambda x: x[1], reverse=True)
-                )
+    try:
+        # Получение объектов
+        all_vehicles, sorted_device_type_counts = await glonass_action.get_glonass_odjects()
+        if all_vehicles:
+            # Рассылка команд
+            await glonass_action.put_comands(all_vehicles, sorted_device_type_counts)
 
-                count = 0
-                for key in sorted_device_type_counts.keys():
-                    for vehicle in all_vehicles:
-                        if key == vehicle["deviceTypeName"]:
-                            terminal_imei = vehicle["imei"]
-                            # async with AsyncSession(config.DB_ENGINE) as session:
-                            #     terminal_db = TerminalDataBase(session)
-                            #     terminal_in_db = await terminal_db.get_terminal_in_db(terminal_imei)
-                            # if not terminal_in_db:
-                            #     #add_terminal_to_db(self, vehicle_data: dict)
-                            #     pass
-                            # else:
-                            #     pass
-                            command = "*?ICCID"
-                            glonass_class.action_glonass(
-                                    )
-                                
+            # Сбор ответов
+            answers = await glonass_action.answer_objects(all_vehicles, sorted_device_type_counts)
 
+            # Сохранение ответов в базу данных
+            # await save_answers_to_db(answers)
+            log.info(answers)
+    except Exception as e:
+        log.error(f"Ошибка при работе с ГЛОНАСС: {e}")
 
+def start_glonass_thread(config):
+    """
+    Запускает отдельный поток для обработки ГЛОНАСС.
+    """
+    asyncio.run(process_glonass_system(config))
+
+def main():
+    """
+    Основной метод запуска программы.
+    """
+    threads = []
+
+    for system_name, system_config in MONITORING_CONFIG.items():
+        if system_name == "glonass":
+            thread = threading.Thread(target=start_glonass_thread, args=(system_config,))
+            threads.append(thread)
+            thread.start()
+
+    # Ожидание завершения всех потоков
+    for thread in threads:
+        thread.join()
 
 if __name__ == "__main__":
-    # Запуск асинхронной программы
-    asyncio.run(get_glonass_commands())
+    main()
 

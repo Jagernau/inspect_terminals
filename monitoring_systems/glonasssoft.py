@@ -80,22 +80,13 @@ class Glonasssoft:
         return await self._post_request(f"{self.based_adres}v3/vehicles/find", token, data)
 
 
-    async def put_terminal_comands(self, token: str, destinationid: str, taskdata: str):
+    async def put_terminal_comands(self, gl_token: str, destinationid: str, taskdata: str):
         """
         Асинхронная отправка команды в терминал.
-
-        Аргументы:
-            token: Токен авторизации.
-            sourceid: Идентификатор источника.
-            destinationid: Идентификатор получателя.
-            taskdata: Команда для терминала.
-            owner: Владелец команды.
-        Возвращает:
-            Ответ сервера в формате JSON или сообщение об ошибке.
         """
         url = f"{self.based_adres}commands/put"
         headers = {
-            "X-Auth": token,
+            "X-Auth": gl_token,
             "Content-Type": "application/json",
         }
         data = [{
@@ -119,17 +110,9 @@ class Glonasssoft:
                     return None
 
 
-    async def get_terminal_answer(self, token: str, imei: str):
+    async def get_terminal_answer(self, gl_token: str, imei: str):
         """
         Асинхронное получение ответов от терминала.
-
-        Аргументы:
-            token: Токен авторизации.
-            imei: IMEI терминала.
-            start: Дата начала (в формате YYYY-MM-DD).
-            end: Дата окончания (в формате YYYY-MM-DD).
-        Возвращает:
-            Ответ сервера в формате JSON или сообщение об ошибке.
         """
         url = f"{self.based_adres}commands"
 
@@ -149,7 +132,7 @@ class Glonasssoft:
             "sort": '[{"property":"createtime","direction":"DESC"}]',
         }
         headers = {
-            "X-Auth": token,
+            "X-Auth": gl_token,
         }
 
         await self.gen_random_delay()
@@ -160,18 +143,5 @@ class Glonasssoft:
                 else:
                     logger.warning(f"Ошибка получения команд с {url}: {response.status} {await response.text()}")
                     return None
-
-    async def action_glonass(self, gl_token, command, imei):           
-        await self.put_terminal_comands(
-                                    token=gl_token,
-                                    destinationid=imei,
-                                    taskdata="*?ICCID",
-                                    )
-        await asyncio.sleep(8)
-        terminal_answer = await self.get_terminal_answer(
-                                        token=gl_token,
-                                        imei=imei,
-                                       )
-        return terminal_answer
 
 
