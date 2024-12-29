@@ -25,12 +25,25 @@ async def process_glonass_system(config):
         if all_vehicles:
             # Рассылка команд
             await glonass_action.put_comands(all_vehicles, sorted_device_type_counts)
+            await asyncio.sleep(10)
 
             # Сбор ответов
             answers = await glonass_action.answer_objects(all_vehicles, sorted_device_type_counts)
+            for anwer in answers:
+                marge_full_info = anwer
+                # _ type Str тип терминала
+                # _ imei Str imei терминала
+                # _ iccid Str iccid Сим карты
+                # _ monitoring_sustem Int Система мониторинга 
+                # _ vehicleId Str Ид в системе мониторинга
+                # _ vehicle_name Str Имя объекта
+                # + client_name Str Имя клиента
+                # + client_id Int Ид клиента в бд
+                # + iccid_in_db Bool Наличие сим в бд
+                # + if_change_iccid Bool Изменится ли imei у СИМ
+                # + old_sim_imei Str Если произошли изменения в Сим, старый
+                # + datetime Авто время изменения
 
-            # Сохранение ответов в базу данных
-            # await save_answers_to_db(answers)
             log.info(answers)
     except Exception as e:
         log.error(f"Ошибка при работе с ГЛОНАСС: {e}")

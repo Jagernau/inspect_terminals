@@ -1,7 +1,10 @@
+import comands_dict
 from monitoring_systems import glonasssoft as gl
 from collections import Counter
 from my_logger import logger as log
 import json
+from comands_dict import commands as comm_dict
+from typing import List, Dict, Any, Union, Optional
 
 class GlonassAction:
     def __init__(self, 
@@ -38,43 +41,66 @@ class GlonassAction:
             log.error(f"Ошибка в получении данных {e}")
         else:
             if all_vehicles and sorted_device_type_counts:
+                print(sorted_device_type_counts)
                 return all_vehicles, sorted_device_type_counts
             else:
                 return None
 
-    async def put_comands(self, all_vehicles, sorted_device_type_counts):
+    async def put_comands(self, 
+                          all_vehicles,
+                          sorted_device_type_counts,
+                          ):
         "Рассылает команды на терминалы"
         gl_token = await self.glonass_class.token()
         count = 0
-        for key in sorted_device_type_counts.keys():
+        for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
-                if key == vehicle['deviceTypeName']:
+                if vehicle['deviceTypeName'] == device_type:
                     terminal_imei = vehicle["imei"]
-                    command = "*?ICCID"
-                    await self.glonass_class.put_terminal_comands(
-                            gl_token=gl_token,
-                            destinationid=terminal_imei,
-                            taskdata=command
-                            )
+                    clear_device_type = str(device_type).split(" ")[0]
 
-                    if count == 20:
-                        break
-                    count += 1
+                    if str(device_type).split(" ")[0] in comm_dict:
+                        command = comm_dict[clear_device_type]["iccid"]["command"]
+                        await self.glonass_class.put_terminal_comands(
+                                gl_token=gl_token,
+                                destinationid=terminal_imei,
+                                taskdata=command
+                                )
 
-    async def answer_objects(self, all_vehicles, sorted_device_type_counts):
+                        if count == 20:
+                            break
+                        count += 1
+
+    async def answer_objects(self,
+                             all_vehicles, 
+                             sorted_device_type_counts,
+                             ):
         "Собирает ответы с терминалов"
         gl_token = await self.glonass_class.token()
         count = 0
         answers = []
-        for key in sorted_device_type_counts.keys():
+        for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
-                if key == vehicle['deviceTypeName']:
+                if vehicle['deviceTypeName'] == device_type:
                     terminal_imei = vehicle["imei"]
                     answer = await self.glonass_class.get_terminal_answer(
                             gl_token=gl_token,
                             imei=terminal_imei,
                             )
-                    answers.append({terminal_imei: answer})
+                    if answer and len(answer) >= 1:
+                        if answer[0]['status'] == True:
+                            raw_answer = answer[0]['answer']
+                            # Извлечение первых 19 цифр, если они есть
+                            digits = ''.join(filter(str.isdigit, raw_answer))
+                            if len(digits) >= 19:
+                                answers.append({
+                                    "type": str(device_type).split(" ")[0],
+                                    "imei": str(terminal_imei),
+                                    "iccid": str(digits[:19]),
+                                    "monitoring_sustem": 1,
+                                    "vehicleId": vehicle["vehicleId"],
+                                    "vehicle_name": vehicle["name"],
+                                    })
 
                     if count == 20:
                         break

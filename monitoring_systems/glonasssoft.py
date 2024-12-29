@@ -116,11 +116,11 @@ class Glonasssoft:
         """
         url = f"{self.based_adres}commands"
 
-        past_time = datetime.now() - timedelta(minutes=30)
-        past_time = past_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        past_time = datetime.now() - timedelta(minutes=10)
+        past_time = past_time.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
-        future_time = datetime.now() + timedelta(minutes=30)
-        future_time = future_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        future_time = datetime.now() + timedelta(minutes=10)
+        future_time = future_time.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
         data = str({
             "imei": imei,
