@@ -136,6 +136,24 @@ class InformationService(Base):
     serv_price = Column(Integer, comment='Цена за сервис')
 
 
+class InspectTerminal(Base):
+    __tablename__ = 'inspect_terminals'
+    __table_args__ = {'comment': 'Таблица по обходу терминалов'}
+
+    inspect_id = Column(Integer, primary_key=True, comment='ID Инспекции')
+    type_term = Column(String(50, 'utf8mb3_unicode_ci'), comment='Тип терминала')
+    imei = Column(String(100, 'utf8mb3_unicode_ci'), comment='IMEIТерминала')
+    iccid = Column(VARCHAR(100), comment='ICCID СИМкарты')
+    vehicleId = Column(String(50, 'utf8mb3_unicode_ci'), comment='ID Как в СМ')
+    vehicle_name = Column(String(50, 'utf8mb3_unicode_ci'), comment='Имя Объекта')
+    client_name = Column(String(400, 'utf8mb3_unicode_ci'), comment='Имя клиента как в 1С')
+    client_id = Column(Integer, comment='ИД клиента из клиентов БД')
+    iccid_in_db = Column(Integer, comment='Наличие Сим карты в нашей БД\\r\\n0-Клментская сим\\r\\n1-наша')
+    if_change_imei = Column(Integer, comment='Будет ли изменён IMEI у сим\\r\\n0-нет\\r\\n1-да')
+    old_sim_imei = Column(String(100, 'utf8mb3_unicode_ci'), comment='Если не сходится IMEI в СИМ заносится сюда ')
+    inspect_date = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"), comment='Времяинспекции')
+
+
 class LogChange(Base):
     __tablename__ = 'log_changes'
     __table_args__ = {'comment': 'Таблица логирования изменений в данных Базы'}
@@ -199,6 +217,35 @@ t_odinakovie_serials = Table(
     Column('device_serial', String(100)),
     Column('count', BigInteger, server_default=text("'0'"))
 )
+
+
+class OnecContract(Base):
+    __tablename__ = 'onec_contracts'
+    __table_args__ = {'comment': 'Таблица с договорами из 1С'}
+
+    contract_id = Column(Integer, primary_key=True, comment='Внутренний ID контракта')
+    name_contract = Column(String(100, 'utf8mb3_unicode_ci'), comment='НаименованиеДоговора')
+    contract_number = Column(String(100, 'utf8mb3_unicode_ci'), comment='НомерДоговора')
+    contract_date = Column(Date, comment='ДатаДоговора')
+    contract_status = Column(VARCHAR(50), comment='Статус')
+    organization = Column(String(200, 'utf8mb3_unicode_ci'), comment='Организация')
+    partner = Column(VARCHAR(1000), comment='Партнер')
+    counterparty = Column(String(1000, 'utf8mb3_unicode_ci'), comment='Контрагент')
+    contract_commencement_date = Column(Date, comment='ДатаНачалаДействия')
+    contract_expiration_date = Column(Date, comment='ДатаОкончанияДействия')
+    contract_purpose = Column(String(200, 'utf8mb3_unicode_ci'), comment='Цель')
+    type_calculations = Column(String(200, 'utf8mb3_unicode_ci'), comment='ВидРасчетов')
+    category = Column(String(100, 'utf8mb3_unicode_ci'), comment='Категория')
+    manager = Column(String(200, 'utf8mb3_unicode_ci'), comment='Менеджер')
+    subdivision = Column(String(600, 'utf8mb3_unicode_ci'), comment='Подразделение')
+    contact_person = Column(String(300, 'utf8mb3_unicode_ci'), comment='КонтактноеЛицо')
+    organization_bank_account = Column(String(300, 'utf8mb3_unicode_ci'), comment='БанковскийСчетОрганизации')
+    counterparty_bank_account = Column(String(300, 'utf8mb3_unicode_ci'), comment='БанковскийСчетКонтрагента')
+    detailed_calculations = Column(String(200, 'utf8mb3_unicode_ci'), comment='ДетализацияРасчетов')
+    unique_partner_identifier = Column(String(500, 'utf8mb3_unicode_ci'), comment='УникальныйИдентификаторПартнера')
+    unique_counterparty_identifier = Column(String(500, 'utf8mb3_unicode_ci'), comment='УникальныйИдентификаторКонтрагента')
+    ok_desk_id = Column(Integer, comment='ID в ОК-деск')
+    unique_contract_identifier = Column(String(200, 'utf8mb3_unicode_ci'), nullable=False, comment='УникальныйИдентификаторДоговораКонтрагента')
 
 
 class SensorVendor(Base):
@@ -328,6 +375,7 @@ class Contragent(Base):
     ca_uid_contragent = Column(String(100, 'utf8mb3_unicode_ci'), comment='УникальныйИдентификаторКонтрагента')
     ca_name_contragent = Column(String(255, 'utf8mb3_unicode_ci'), comment='НаименованиеКонтрагента')
     service_manager = Column(String(100, 'utf8mb3_unicode_ci'), comment='Имя прикреплённого менеджера тех поддержки')
+    ok_desk_id = Column(Integer, comment='id в ОК деске')
 
     ca_holding = relationship('Holding')
 
@@ -536,6 +584,7 @@ class CaObject(Base):
     parent_id_sys = Column(VARCHAR(200), comment='Id клиента в системе мониторинга')
     contragent_id = Column(ForeignKey('Contragents.ca_id', ondelete='RESTRICT', onupdate='RESTRICT'), index=True)
     ca_uid = Column(String(100, 'utf8mb3_unicode_ci'), comment='Уникальный id контрагента')
+    ok_desk_id = Column(Integer, comment='ID объекта в ОК-деске')
 
     contragent = relationship('Contragent')
     object_status1 = relationship('ObjectStatus')

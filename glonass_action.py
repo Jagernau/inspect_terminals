@@ -5,6 +5,7 @@ from my_logger import logger as log
 import json
 from comands_dict import commands as comm_dict
 from typing import List, Dict, Any, Union, Optional
+import asyncio
 
 class GlonassAction:
     def __init__(self, 
@@ -53,23 +54,25 @@ class GlonassAction:
         "Рассылает команды на терминалы"
         gl_token = await self.glonass_class.token()
         count = 0
+        tasks = []
         for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
-                if vehicle['deviceTypeName'] == device_type:
+                if 'deviceTypeName' in vehicle and  vehicle['deviceTypeName'] == device_type:
                     terminal_imei = vehicle["imei"]
                     clear_device_type = str(device_type).split(" ")[0]
 
                     if str(device_type).split(" ")[0] in comm_dict:
                         command = comm_dict[clear_device_type]["iccid"]["command"]
-                        await self.glonass_class.put_terminal_comands(
+                        tasks.append(asyncio.create_task(self.glonass_class.put_terminal_comands(
                                 gl_token=gl_token,
                                 destinationid=terminal_imei,
                                 taskdata=command
-                                )
+                                )))
 
-                        if count == 20:
+                        if count == 50:
                             break
                         count += 1
+        asyncio.gather(*tasks)
 
     async def answer_objects(self,
                              all_vehicles, 
@@ -81,7 +84,7 @@ class GlonassAction:
         answers = []
         for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
-                if vehicle['deviceTypeName'] == device_type:
+                if 'deviceTypeName' in vehicle and vehicle['deviceTypeName'] == device_type:
                     terminal_imei = vehicle["imei"]
                     answer = await self.glonass_class.get_terminal_answer(
                             gl_token=gl_token,
@@ -97,12 +100,12 @@ class GlonassAction:
                                     "type": str(device_type).split(" ")[0],
                                     "imei": str(terminal_imei),
                                     "iccid": str(digits[:19]),
-                                    "monitoring_sustem": 1,
+                                    "monitoring_system": 1,
                                     "vehicleId": vehicle["vehicleId"],
                                     "vehicle_name": vehicle["name"],
                                     })
 
-                    if count == 20:
+                    if count == 50:
                         break
                     count += 1
         return answers

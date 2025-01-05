@@ -27,11 +27,6 @@ def generate_mysql_models_three(
 
 if __name__ == "__main__":
     generate_mysql_models_two(
-        connector=str(config.connection_mysql_two),
+        connector=str(config.connection_mysql),
         filename="mysql_models_two"
-    )
-
-    generate_mysql_models_three(
-        connector=str(config.connection_mysql_three),
-        filename="mysql_models_three"
     )

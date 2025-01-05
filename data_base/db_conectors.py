@@ -1,22 +1,24 @@
+from typing import Final
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 import sys
 sys.path.append('../')
 from inspect_terminals import config
 
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+class MysqlDatabase: 
+    BASE: Final = declarative_base()
 
-class MysqlDatabaseTwo:
     def __init__(self):
-        self.__engine = create_async_engine(str(config.connection_mysql_two), echo=True)
-        self.__session = sessionmaker(
-            bind=self.__engine, class_=AsyncSession, expire_on_commit=False
-        )
+        self.__engine = create_engine(str(config.connection_mysql))
+        session = sessionmaker(autocommit=False, autoflush=False, bind=self.__engine)
+        self.__session = session()
+
+    @property 
+    def session(self): 
+        return self.__session
 
     @property
-    def session(self):
-        return self.__session()
-
-    @property
-    def engine(self):
+    def engine(self): 
         return self.__engine
-
