@@ -17,6 +17,7 @@ propcache==0.2.1
 PyMySQL==1.1.1
 python-dotenv==1.0.1
 requests==2.32.3
+setuptools==75.6.0
 sqlacodegen==2.3.0.post1
 SQLAlchemy==1.4.54
 typeguard==4.4.1
