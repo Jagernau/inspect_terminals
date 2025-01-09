@@ -53,7 +53,6 @@ class GlonassAction:
                           ):
         "Рассылает команды на терминалы"
         gl_token = await self.glonass_class.token()
-        count = 0
         tasks = []
         for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
@@ -68,11 +67,8 @@ class GlonassAction:
                                 destinationid=terminal_imei,
                                 taskdata=command
                                 )))
-
-                        if count == 50:
-                            break
-                        count += 1
         asyncio.gather(*tasks)
+
 
     async def answer_objects(self,
                              all_vehicles, 
@@ -80,7 +76,6 @@ class GlonassAction:
                              ):
         "Собирает ответы с терминалов"
         gl_token = await self.glonass_class.token()
-        count = 0
         answers = []
         for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
@@ -104,9 +99,5 @@ class GlonassAction:
                                     "vehicleId": vehicle["vehicleId"],
                                     "vehicle_name": vehicle["name"],
                                     })
-
-                    if count == 50:
-                        break
-                    count += 1
         return answers
 
