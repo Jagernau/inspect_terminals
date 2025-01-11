@@ -3,6 +3,7 @@ from collections import Counter
 from my_logger import logger as log
 from comands_dict import commands as comm_dict
 import asyncio
+from my_logger import logger as log
 
 class GlonassAction:
     def __init__(self, 
@@ -74,27 +75,39 @@ class GlonassAction:
         "Собирает ответы с терминалов"
         gl_token = await self.glonass_class.token()
         answers = []
-        for device_type, _ in sorted_device_type_counts.items():
-            for vehicle in all_vehicles:
-                if 'deviceTypeName' in vehicle and vehicle['deviceTypeName'] == device_type:
-                    terminal_imei = vehicle["imei"]
-                    answer = await self.glonass_class.get_terminal_answer(
-                            gl_token=gl_token,
-                            imei=terminal_imei,
-                            )
-                    if answer and len(answer) >= 1:
-                        if answer[0]['status'] == True:
-                            raw_answer = answer[0]['answer']
-                            # Извлечение первых 19 цифр, если они есть
-                            digits = ''.join(filter(str.isdigit, raw_answer))
-                            if len(digits) >= 19:
-                                answers.append({
-                                    "type": str(device_type).split(" ")[0],
-                                    "imei": str(terminal_imei),
-                                    "iccid": str(digits[:19]),
-                                    "monitoring_system": 1,
-                                    "vehicleId": vehicle["vehicleId"],
-                                    "vehicle_name": vehicle["name"],
-                                    })
-        return answers
+        try:
+            for device_type, _ in sorted_device_type_counts.items():
+                for vehicle in all_vehicles:
+                    if 'deviceTypeName' in vehicle and vehicle['deviceTypeName'] == device_type:
+                        terminal_imei = vehicle["imei"]
+                        answer = await self.glonass_class.get_terminal_answer(
+                                gl_token=gl_token,
+                                imei=terminal_imei,
+                                )
+                        if answer and len(answer) >= 1:
+                            try:
+                                digits = ""
+                                if answer[0]['status'] == True:
+                                    raw_answer = answer[0]['answer']
+                                    # Извлечение первых 19 цифр, если они есть
+                                    digits = ''.join(filter(str.isdigit, raw_answer))
+                            except Exception as e:
+                                log.error(f"ошибка в приёме и обработке ответа {answer}  {e}")
+                                continue
+                            else:
+                                if len(digits) >= 19:
+                                    answers.append({
+                                        "type": str(device_type).split(" ")[0],
+                                        "imei": str(terminal_imei),
+                                        "iccid": str(digits[:19]),
+                                        "monitoring_system": 1,
+                                        "vehicleId": vehicle["vehicleId"],
+                                        "vehicle_name": vehicle["name"],
+                                        })
+
+        except Exception as e:
+            log.error(f"ошибка в сборщике ответов {e}")
+            return []
+        else:
+            return answers
 
