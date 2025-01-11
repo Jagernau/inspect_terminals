@@ -1,10 +1,7 @@
-import comands_dict
 from monitoring_systems import glonasssoft as gl
 from collections import Counter
 from my_logger import logger as log
-import json
 from comands_dict import commands as comm_dict
-from typing import List, Dict, Any, Union, Optional
 import asyncio
 
 class GlonassAction:

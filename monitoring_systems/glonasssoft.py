@@ -1,8 +1,6 @@
 import asyncio
-import json
 import aiohttp
 from random import uniform
-from collections import Counter
 from datetime import datetime, timedelta
 import sys
 sys.path.append('../')

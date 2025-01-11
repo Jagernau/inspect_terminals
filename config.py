@@ -19,5 +19,10 @@ MONITORING_CONFIG = {
         "user_id": envi.get('GLONASS_USR_ID'),
         "parent_id": envi.get('GLONASS_PARENT_ID'),
     },
+    "fort": {
+        "login": envi.get('FORT_LOGIN'),
+        "password": envi.get('FORT_PASS'),
+        "address": envi.get('FORT_BASED_ADRESS'),
+    },
 }
 
