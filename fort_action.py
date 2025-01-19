@@ -44,11 +44,11 @@ class FortAction:
         #     else:
         #         return None
 
-fort_class = FortAction(
-        MONITORING_CONFIG["fort"]["login"],
-        MONITORING_CONFIG["fort"]["password"],
-        MONITORING_CONFIG["fort"]["address"],
-        )
-asyncio.run(fort_class.get_fort_odjects())
+# fort_class = FortAction(
+#         MONITORING_CONFIG["fort"]["login"],
+#         MONITORING_CONFIG["fort"]["password"],
+#         MONITORING_CONFIG["fort"]["address"],
+#         )
+# asyncio.run(fort_class.get_fort_odjects())
 
 

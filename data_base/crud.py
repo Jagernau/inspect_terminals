@@ -189,7 +189,9 @@ def add_inspect_terminal(marge_info):
                 client_id = marge_info["client_id"],
                 iccid_in_db = marge_info["iccid_in_db"],
                 if_change_imei = marge_info["if_change_imei"],
-                old_sim_imei = marge_info["old_sim_imei"]
+                old_sim_imei = marge_info["old_sim_imei"],
+                monitoring_system = marge_info["monitoring_system"],
+
                 )
         session.add(data_inspect)
         session.commit()

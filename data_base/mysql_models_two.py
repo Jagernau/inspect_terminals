@@ -136,24 +136,6 @@ class InformationService(Base):
     serv_price = Column(Integer, comment='Цена за сервис')
 
 
-class InspectTerminal(Base):
-    __tablename__ = 'inspect_terminals'
-    __table_args__ = {'comment': 'Таблица по обходу терминалов'}
-
-    inspect_id = Column(Integer, primary_key=True, comment='ID Инспекции')
-    type_term = Column(String(50, 'utf8mb3_unicode_ci'), comment='Тип терминала')
-    imei = Column(String(100, 'utf8mb3_unicode_ci'), comment='IMEIТерминала')
-    iccid = Column(VARCHAR(100), comment='ICCID СИМкарты')
-    vehicleId = Column(String(50, 'utf8mb3_unicode_ci'), comment='ID Как в СМ')
-    vehicle_name = Column(String(50, 'utf8mb3_unicode_ci'), comment='Имя Объекта')
-    client_name = Column(String(400, 'utf8mb3_unicode_ci'), comment='Имя клиента как в 1С')
-    client_id = Column(Integer, comment='ИД клиента из клиентов БД')
-    iccid_in_db = Column(Integer, comment='Наличие Сим карты в нашей БД\\r\\n0-Клментская сим\\r\\n1-наша')
-    if_change_imei = Column(Integer, comment='Будет ли изменён IMEI у сим\\r\\n0-нет\\r\\n1-да')
-    old_sim_imei = Column(String(100, 'utf8mb3_unicode_ci'), comment='Если не сходится IMEI в СИМ заносится сюда ')
-    inspect_date = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"), comment='Времяинспекции')
-
-
 class LogChange(Base):
     __tablename__ = 'log_changes'
     __table_args__ = {'comment': 'Таблица логирования изменений в данных Базы'}
@@ -217,6 +199,23 @@ t_odinakovie_serials = Table(
     Column('device_serial', String(100)),
     Column('count', BigInteger, server_default=text("'0'"))
 )
+
+
+class OnecContact(Base):
+    __tablename__ = 'onec_contacts'
+    __table_args__ = {'comment': 'Контакты'}
+
+    contact_id = Column(Integer, primary_key=True, comment='Идентификатор Контактов')
+    surname = Column(String(50, 'utf8mb3_unicode_ci'), comment='Фамилия')
+    name = Column(String(50, 'utf8mb3_unicode_ci'), comment='Имя')
+    patronymic = Column(String(50, 'utf8mb3_unicode_ci'), comment='Отчество')
+    position = Column(String(100, 'utf8mb3_unicode_ci'), comment='Должность')
+    phone = Column(String(80, 'utf8mb3_unicode_ci'), comment='Телефон')
+    mobiletelephone = Column(String(80, 'utf8mb3_unicode_ci'), comment='МобТелефон')
+    email = Column(String(80, 'utf8mb3_unicode_ci'), comment='ЭлПочта')
+    unique_partner_identifier = Column(String(200, 'utf8mb3_unicode_ci'), comment='УникальныйИдентификаторПартнера')
+    unique_contact_identifier = Column(String(200, 'utf8mb3_unicode_ci'), comment='УникальныйИдентификаторКонтактногоЛица')
+    ok_desk_id = Column(Integer, comment='ИД в ОК ДЕСК')
 
 
 class OnecContract(Base):
@@ -453,6 +452,27 @@ class DjangoAdminLog(Base):
 
     content_type = relationship('DjangoContentType')
     user = relationship('AuthUser')
+
+
+class InspectTerminal(Base):
+    __tablename__ = 'inspect_terminals'
+    __table_args__ = {'comment': 'Таблица по обходу терминалов'}
+
+    inspect_id = Column(Integer, primary_key=True, comment='ID Инспекции')
+    type_term = Column(VARCHAR(50), comment='Тип терминала')
+    imei = Column(String(100, 'utf8mb3_unicode_ci'), comment='IMEIТерминала')
+    iccid = Column(VARCHAR(100), comment='ICCID СИМкарты')
+    vehicleId = Column(String(50, 'utf8mb3_unicode_ci'), comment='ID Как в СМ')
+    vehicle_name = Column(String(50, 'utf8mb3_unicode_ci'), comment='Имя Объекта')
+    client_name = Column(String(400, 'utf8mb3_unicode_ci'), comment='Имя клиента как в 1С')
+    client_id = Column(Integer, comment='ИД клиента из клиентов БД')
+    iccid_in_db = Column(Integer, comment='Наличие Сим карты в нашей БД\\r\\n0-Клментская сим\\r\\n1-наша')
+    if_change_imei = Column(Integer, comment='Будет ли изменён IMEI у сим\\r\\n0-нет\\r\\n1-да')
+    old_sim_imei = Column(String(100, 'utf8mb3_unicode_ci'), comment='Если не сходится IMEI в СИМ заносится сюда ')
+    inspect_date = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"), comment='Времяинспекции')
+    monitoring_system = Column(ForeignKey('monitoring_system.mon_sys_id', ondelete='RESTRICT', onupdate='RESTRICT'), index=True, comment='Система Мониторинга')
+
+    monitoring_system1 = relationship('MonitoringSystem')
 
 
 class Invoicing(Base):

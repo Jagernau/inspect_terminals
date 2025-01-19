@@ -24,5 +24,9 @@ MONITORING_CONFIG = {
         "password": envi.get('FORT_PASS'),
         "address": envi.get('FORT_BASED_ADRESS'),
     },
+    "wialon_hosting": {
+        "wialon_host_token": envi.get('WIALON_HOST_TOKEN'),
+        "address": envi.get('WIALON_HOST_ADRESS'),
+    },
 }
 
