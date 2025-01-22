@@ -135,10 +135,10 @@ class WialonHosting:
         comand_result = self.sdk.messages_load_last({
             "itemId": int(obj_id),
             "lastTime": curent_time,
-            "lastCount": 300,
+            "lastCount": 100,
             "flags": 512,
             "flagsMask": int(0),
-            "loadCount": 300
+            "loadCount": 100
              })
         self.sdk.logout()
         return comand_result

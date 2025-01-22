@@ -6,8 +6,7 @@ from comands_dict import commands as comm_dict
 from my_logger import logger as log
 import asyncio
 import re
-import datetime as dt
-
+import time
 
 class WialonHostingAction:
     def __init__(self, 
@@ -89,37 +88,50 @@ class WialonHostingAction:
                 for vehicle in all_vehicles:
                     if 'deviceTypeName' in vehicle and vehicle['deviceTypeName'] == device_type:
                         terminal_id = vehicle["id"]
-                        now = dt.datetime.now(dt.timezone.utc)
-                        adjusted_time = now - dt.timedelta(milliseconds=1000)
-                        timestamp = int(adjusted_time.timestamp() * 1000)
                         # Время для запроса
-                        request_time = timestamp - 300
+                        request_time = int(time.time()) - 600
 
                         answer = self.wialon_hosting_class.get_last_masseges_data(
                                 obj_id=terminal_id,
                                 curent_time=request_time
                                 )
-                        print(answer) 
-                        # if answer and len(answer) >= 1:
-                        #     try:
-                        #         digits = ""
-                        #         if answer[0]['status'] == True:
-                        #             raw_answer = answer[0]['answer']
-                        #             # Извлечение первых 19 цифр, если они есть
-                        #             digits = ''.join(filter(str.isdigit, raw_answer))
-                        #     except Exception as e:
-                        #         log.error(f"ошибка в приёме и обработке ответа {answer}  {e}")
-                        #         continue
-                        #     else:
-                        #         if len(digits) >= 19:
-                        #             answers.append({
-                        #                 "type": str(device_type).split(" ")[0],
-                        #                 "imei": str(terminal_imei),
-                        #                 "iccid": str(digits[:19]),
-                        #                 "monitoring_system": 1,
-                        #                 "vehicleId": vehicle["vehicleId"],
-                        #                 "vehicle_name": vehicle["name"],
-                        #                 })
+                        if answer and len(answer) >= 1:
+                            try:
+                                pattern = r"\b8\d{17,19}\b"
+
+                                def find_iccid(obj):
+                                    """Рекурсивный поиск ICCID в JSON."""
+                                    matches = []
+                                    if isinstance(obj, dict):
+                                        for key, value in obj.items():
+                                            # Проверяем ключ
+                                            matches.extend(re.findall(pattern, str(key)))
+                                            # Проверяем значение
+                                            matches.extend(find_iccid(value))
+                                    elif isinstance(obj, list):
+                                        for item in obj:
+                                            # Проверяем каждый элемент списка
+                                            matches.extend(find_iccid(item))
+                                    elif isinstance(obj, (str, int, float)):  # Если значение - строка или число
+                                        matches.extend(re.findall(pattern, str(obj)))
+                                    return matches
+
+                                digits = find_iccid(answer)
+                                result = digits[0] if digits else ''
+
+                            except Exception as e:
+                                log.error(f"ошибка в приёме и обработке ответа {answer}  {e}")
+                                continue
+                            else:
+                                if len(str(result)) >= 19:
+                                    answers.append({
+                                        "type": device_type,
+                                        "imei": str(vehicle["imei"]),
+                                        "iccid": result,
+                                        "monitoring_system": 3,
+                                        "vehicleId": vehicle["id"],
+                                        "vehicle_name": vehicle["name"],
+                                        })
 
         except Exception as e:
             log.error(f"ошибка в сборщике ответов {e}")
