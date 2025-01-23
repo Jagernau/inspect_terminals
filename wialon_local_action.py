@@ -7,8 +7,9 @@ from my_logger import logger as log
 import asyncio
 import re
 import time
+from wialon.sdk import WialonError, SdkException
 
-class WialonHostingAction:
+class WialonLocalAction:
     def __init__(self, 
                  wialon_hosting_token,
                  wialon_hosting_adres,
@@ -128,7 +129,7 @@ class WialonHostingAction:
                                         "type": device_type,
                                         "imei": str(vehicle["imei"]),
                                         "iccid": result[:19],
-                                        "monitoring_system": 3,
+                                        "monitoring_system": 4,
                                         "vehicleId": vehicle["id"],
                                         "vehicle_name": vehicle["name"],
                                         })

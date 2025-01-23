@@ -1,5 +1,5 @@
 import asyncio
-from wialon_hosting_action import WialonHostingAction
+from wialon_local_action import WialonLocalAction
 from data_base import crud
 from my_logger import logger as log
 from time import sleep
@@ -17,12 +17,12 @@ def chunk_list(data, chunk_size):
     return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
 
-async def process_wialon_hosting_system(config):
+async def process_wialon_local_system(config):
     """
-    Обрабатывает работу с системой мониторинга ГЛОНАСС.
+    Обрабатывает работу с системой мониторинга Wialon Local.
     """
-    wialon_hosting_action = WialonHostingAction(
-        wialon_hosting_token=config["wialon_host_token"],
+    wialon_hosting_action = WialonLocalAction(
+        wialon_hosting_token=config["wialon_local_token"],
         wialon_hosting_adres=config["address"],
     )
     
@@ -46,6 +46,7 @@ async def process_wialon_hosting_system(config):
 
                 # Сбор ответов
                 answers = wialon_hosting_action.answer_objects(chunk, sorted_device_type_counts)
+
                 if len(answers) >= 1:
                     for answer in answers:
                         if answer["monitoring_system"] and answer["vehicleId"]:
@@ -98,14 +99,14 @@ async def process_wialon_hosting_system(config):
                                     crud.add_inspect_terminal(marge_full_info)
                                 log.info(marge_full_info)
             except (Exception, WialonError, SdkException) as e:
-                log.error(f"Ошибка при работе с Wialon_hosting: {e}")
+                log.error(f"Ошибка при работе с Wialon_Local: {e}")
                 continue
 
-def start_wialon_hosting_thread(config):
+def start_wialon_local_thread(config):
     """
-    Запускает отдельный поток для обработки Виалон Хостинг.
+    Запускает отдельный поток для обработки Виалон Локал.
     """
     while True:
-        asyncio.run(process_wialon_hosting_system(config))
+        asyncio.run(process_wialon_local_system(config))
         sleep(10)
 
