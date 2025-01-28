@@ -7,6 +7,7 @@ from my_logger import logger as log
 import asyncio
 import re
 import time
+from wialon.sdk import WialonError, SdkException
 
 class WialonHostingAction:
     def __init__(self, 
