@@ -38,7 +38,7 @@ async def process_glonass_system(config):
         else:
             new_vehicles_len = all_vehicles
 
-        chunked_vehicles = chunk_list(new_vehicles_len, 100)
+        chunked_vehicles = chunk_list(new_vehicles_len, 500)
         for chunk in chunked_vehicles:
             try:
                 # Рассылка команд
@@ -108,5 +108,5 @@ def start_glonass_thread(config):
     """
     while True:
         asyncio.run(process_glonass_system(config))
-        sleep(10)
+        sleep(1000)
 
