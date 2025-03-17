@@ -72,3 +72,27 @@ class Fort:
         }
         return await self._get_request(f"{self.based_adres}v1/getobjectslist", token, params=params) 
 
+    
+    async def put_terminal_comands(self,token, obj_id, command):
+        params = {
+                'SessionId': str(token),
+                'companyId': 0,
+                'object_id': obj_id,
+                'type': 1,
+                'message': str(command),
+                'channel': 1
+        }
+        return await self._get_request(f"{self.based_adres}v1/createcommandmsg", token, params=params) 
+
+
+    async def get_terminal_comands(self,token, obj_id, command):
+
+        params = {
+                'SessionId': str(token),
+                'companyId': 0,
+                'object_id': obj_id,
+                'type': 2,
+                'message': str(command),
+                'channel': 1
+        }
+        return await self._get_request(f"{self.based_adres}v1/createcommandmsg", token, params=params) 

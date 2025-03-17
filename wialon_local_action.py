@@ -98,7 +98,7 @@ class WialonLocalAction:
                                 )
                         if answer and len(answer) >= 1:
                             try:
-                                pattern = r"\b8\d{17,19}\b"
+                                pattern = r"(?<!\d)(8\d{17,20})(?!\d)"
 
                                 def find_iccid(obj):
                                     """Рекурсивный поиск ICCID в JSON."""

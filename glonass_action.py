@@ -4,6 +4,7 @@ from my_logger import logger as log
 from comands_dict import commands as comm_dict
 import asyncio
 from my_logger import logger as log
+import re
 
 class GlonassAction:
     def __init__(self, 
@@ -86,20 +87,22 @@ class GlonassAction:
                                 )
                         if answer and len(answer) >= 1:
                             try:
-                                digits = ""
+                                matches = []
                                 if answer[0]['status'] == True:
                                     raw_answer = answer[0]['answer']
                                     # Извлечение первых 19 цифр, если они есть
-                                    digits = ''.join(filter(str.isdigit, raw_answer))
+                                    pattern = r"(?<!\d)(8\d{17,20})(?!\d)"
+
+                                    matches.extend(re.findall(pattern, str(raw_answer)))
                             except Exception as e:
                                 log.error(f"ошибка в приёме и обработке ответа {answer}  {e}")
                                 continue
                             else:
-                                if len(digits) >= 19:
+                                if len(matches) >=1 and len(matches[0]) >= 19:
                                     answers.append({
                                         "type": str(device_type).split(" ")[0],
                                         "imei": str(terminal_imei),
-                                        "iccid": str(digits[:19]),
+                                        "iccid": str(matches[0][:19]),
                                         "monitoring_system": 1,
                                         "vehicleId": vehicle["vehicleId"],
                                         "vehicle_name": vehicle["name"],

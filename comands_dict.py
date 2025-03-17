@@ -11,10 +11,16 @@ commands = {
                         "command": "ICCID"
                     }
                 },
-            # "TELTONIKA": {
-            #     "iccid": {
-            #             "type": "any",
-            #             "command": "getimeiccid"
-            #         }
-            #     },
+            "TELTONIKA": {
+                "iccid": {
+                        "type": "any",
+                        "command": "getimeiccid"
+                    }
+                },
+            "GALILEOSKY": {
+                "iccid": {
+                        "type": "any",
+                        "command": "GSMinfo"
+                    }
+                },
             }
