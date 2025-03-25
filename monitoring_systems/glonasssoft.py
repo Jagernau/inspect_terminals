@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 import sys
 sys.path.append('../')
 from inspect_terminals.my_logger import logger
+import requests
+import time
+import json
 
 class Glonasssoft:
     def __init__(
@@ -24,20 +27,18 @@ class Glonasssoft:
     async def gen_random_delay(self):
         await asyncio.sleep(uniform(1.1, 1.7))
 
-    async def token(self):
+    def _token(self):
         """Получение Токена Глонассофт"""
-        await self.gen_random_delay()
-        url = f"{self.based_adres}v3/auth/login"
-        data = {"login": self.login, "password": self.password}
-        headers = {"Content-type": "application/json", "accept": "json"}
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=data, headers=headers) as response:
-                if response.status == 200:
-                    return (await response.json()).get("AuthId")
-                else:
-                    logger.warning("Не получен ТОКЕН")
-                    return None
+        time.sleep(1)
+        url = f'{self.based_adres}v3/auth/login'
+        data = {'login': self.login, 'password': self.password}
+        headers = {'Content-type': 'application/json', 'accept': 'json'}
+        response = requests.post(url, data=json.dumps(data), headers=headers)
+        if response.status_code == 200:
+            return response.json()["AuthId"]
+        else:
+            logger.error(f"Не получен ТОКЕН Глонассофт попытка")
+            return None
 
     async def _get_request(self, url, token):
         """Асинхронный универсальный метод для GET-запросов"""

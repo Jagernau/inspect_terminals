@@ -20,13 +20,14 @@ class GlonassAction:
                  glonass_usr_id,
                  glonass_parent_id
                 )
+        self.gl_token = self.glonass_class._token()
 
     async def get_glonass_odjects(self):
         "Возвращает все объекты, сортированные по количесту типы терминылов"
         try:
             all_vehicles = None
             sorted_device_type_counts = None
-            gl_token = await self.glonass_class.token()
+            gl_token = self.gl_token
             if gl_token:
                 all_vehicles = await self.glonass_class.get_all_vehicles_new(
                     gl_token
@@ -41,7 +42,6 @@ class GlonassAction:
             log.error(f"Ошибка в получении данных {e}")
         else:
             if all_vehicles and sorted_device_type_counts:
-                print(sorted_device_type_counts)
                 return all_vehicles, sorted_device_type_counts
             else:
                 return None
@@ -51,7 +51,7 @@ class GlonassAction:
                           sorted_device_type_counts,
                           ):
         "Рассылает команды на терминалы"
-        gl_token = await self.glonass_class.token()
+        gl_token = self.gl_token
         tasks = []
         for device_type, _ in sorted_device_type_counts.items():
             for vehicle in all_vehicles:
@@ -74,7 +74,7 @@ class GlonassAction:
                              sorted_device_type_counts,
                              ):
         "Собирает ответы с терминалов"
-        gl_token = await self.glonass_class.token()
+        gl_token = self.gl_token
         answers = []
         try:
             for device_type, _ in sorted_device_type_counts.items():
